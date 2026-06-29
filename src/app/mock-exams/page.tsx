@@ -15,6 +15,7 @@ import {
   generatedMockExams,
   GeneratedExam,
 } from '@/data/generatedMockExams';
+import { lboroLogoDataUri } from '@/data/lboroLogo';
 import {
   ClipboardCheck,
   ClipboardList,
@@ -85,23 +86,190 @@ function downloadText(filename: string, content: string, mime = 'text/plain;char
   URL.revokeObjectURL(url);
 }
 
-function buildDocHtml(exam: GeneratedExam, includeAnswers: boolean) {
-  const escaped = buildExamText(exam, includeAnswers)
+function escapeHtml(text: string) {
+  return text
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;');
+}
+
+type DocTarget = 'print' | 'word';
+
+/**
+ * MS Word's HTML renderer ("Mso") ignores flexbox, gap and most modern layout
+ * CSS, so the print/PDF markup (which relies on flex for header/fill-in/mark
+ * rows) collapses into a single misaligned column when opened as a .doc.
+ * For target 'word' the same content is laid out with <table> rows instead,
+ * which Word's engine has always supported.
+ */
+function buildDocHtml(exam: GeneratedExam, includeAnswers: boolean, target: DocTarget = 'print') {
+  const purple = '#582C83';
+  const isWord = target === 'word';
+
+  const headerRow = isWord
+    ? `<table class="header-row" role="presentation"><tr>
+        <td class="hr-left">Semester 1 25/26</td>
+        <td class="hr-right">${escapeHtml(exam.title)} &middot; ${escapeHtml(exam.difficulty)}</td>
+      </tr></table>`
+    : `<div class="header-row">
+        <span>Semester 1 25/26</span>
+        <span>${escapeHtml(exam.title)} &middot; ${escapeHtml(exam.difficulty)}</span>
+      </div>`;
+
+  const fillInRow = isWord
+    ? `<table class="fill-in-row" role="presentation" align="center"><tr>
+        <td>ID Number: <span class="fill-box">&nbsp;</span></td>
+        <td class="fill-gap"></td>
+        <td>Desk Number: <span class="fill-box">&nbsp;</span></td>
+      </tr></table>`
+    : `<div class="fill-in-row">
+        <span>ID Number: <span class="fill-box"></span></span>
+        <span>Desk Number: <span class="fill-box"></span></span>
+      </div>`;
+
+  const titleWithMarks = (title: string, marks: number) =>
+    isWord
+      ? `<table class="title-row" role="presentation"><tr><td class="title-left">${title}</td><td class="title-right">[${marks} marks]</td></tr></table>`
+      : `<p class="question-title">${title}<span class="marks">[${marks} marks]</span></p>`;
+
+  const subqPrompt = (label: string, prompt: string, marks: number) =>
+    isWord
+      ? `<table class="subq-row" role="presentation"><tr>
+          <td class="subq-label">(${label})</td>
+          <td class="subq-text">${escapeHtml(prompt)}</td>
+          <td class="subq-marks">[${marks} marks]</td>
+        </tr></table>`
+      : `<p class="subq-prompt"><span class="subq-label">(${label})</span><span class="subq-text">${escapeHtml(prompt)}</span><span class="marks">[${marks} marks]</span></p>`;
+
+  const coverPage = `
+    <section class="cover">
+      <img class="logo" src="${lboroLogoDataUri}" alt="Loughborough University" />
+      <h1 class="module-title">${escapeHtml(exam.moduleTitle)}</h1>
+      <p class="module-code">${escapeHtml(exam.code)}</p>
+      ${headerRow}
+      <hr />
+      <div class="fill-in">
+        <strong>Please fill in:</strong>
+        ${fillInRow}
+      </div>
+      <hr />
+      <p>This examination is to take place in-person at a central University venue under exam conditions. The standard length of time for this paper is <strong>${escapeHtml(exam.duration)}</strong>.</p>
+      <p>You will not be able to leave the exam hall for the first 30 or final 15 minutes of your exam. Your invigilator will collect your exam paper when you have finished.</p>
+      <div class="help-box">
+        <p class="help-title">Help during the exam</p>
+        <p>Invigilators are not able to answer queries about the content of your exam paper. Instead, please make a note of your query in your answer script to be considered during the marking process.</p>
+        <p>If you feel unwell, please raise your hand so that an invigilator can assist you.</p>
+      </div>
+      <div class="instructions">
+        <p>Total marks available: <strong>${exam.totalMarks}</strong></p>
+        ${exam.instructions.map((item) => `<p>${escapeHtml(item)}</p>`).join('\n        ')}
+        <p>Answer ALL questions.</p>
+        <p>Complete questions in pen to ensure clarity when scanning.</p>
+      </div>
+    </section>
+  `;
+
+  const questionPages = exam.questions
+    .map((question, qIndex) => `
+    <section class="question">
+      ${titleWithMarks(`Question ${qIndex + 1}`, question.marks)}
+      <p class="context">${escapeHtml(question.context)}</p>
+      ${question.subQuestions
+        .map((part) => `
+      <div class="subq">
+        ${subqPrompt(part.label, part.prompt, part.marks)}
+        ${includeAnswers
+          ? `<div class="mark-scheme">
+          <p class="ms-heading">Model answer</p>
+          <p>${escapeHtml(part.modelAnswer)}</p>
+          ${part.alternativeAnswers?.length ? `<p><strong>Alternative valid answers:</strong> ${escapeHtml(part.alternativeAnswers.join(' '))}</p>` : ''}
+          <p><strong>Common mistakes:</strong> ${escapeHtml(part.commonMistakes.join(' '))}</p>
+          <p><strong>Examiner comment:</strong> ${escapeHtml(part.examinerComment)}</p>
+          ${part.highDistinction ? `<p><strong>High distinction:</strong> ${escapeHtml(part.highDistinction)}</p>` : ''}
+          <p class="source-map"><strong>Revision map:</strong> ${escapeHtml(part.sourceMap)}</p>
+        </div>`
+          : `<div class="answer-space">&nbsp;</div>
+        <p class="tick-line">Tick here if you continue at the end of the booklet: &#9633;</p>`}
+      </div>`)
+        .join('\n      ')}
+    </section>`)
+    .join('\n');
+
+  const sharedStyles = `
+    body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000000; }
+    .logo { display: block; margin-left: auto; width: 170px; height: auto; }
+    .module-title { text-align: center; font-size: 16pt; font-weight: bold; color: #000000; margin: 24px 0 2px; }
+    .module-code { text-align: center; color: ${purple}; font-weight: bold; font-size: 12pt; margin: 0 0 18px; }
+    hr { border: none; border-top: 1px solid #000000; margin: 10px 0; }
+    .fill-in { text-align: center; margin: 18px 0; }
+    .fill-in strong { display: block; margin-bottom: 12px; }
+    .fill-box { display: inline-block; border: 1px solid #000000; width: 160px; height: 22px; vertical-align: middle; margin-left: 6px; }
+    .help-box { border: 1px solid #000000; padding: 12px 18px; margin: 18px 0; text-align: center; }
+    .help-title { text-decoration: underline; font-weight: bold; margin: 0 0 8px; }
+    .instructions p { text-align: center; margin: 6px 0; }
+    .context { text-align: justify; margin: 0 0 14px; }
+    .subq { margin: 14px 0; }
+    .answer-space { height: 70px; border-bottom: none; }
+    .tick-line { text-align: right; font-size: 9.5pt; color: #444444; margin: 4px 0 0; }
+    .mark-scheme { background: #F4F0FA; border-left: 3px solid ${purple}; padding: 8px 14px; margin: 8px 0 0 28px; font-size: 10.5pt; }
+    .ms-heading { text-transform: uppercase; font-size: 9.5pt; font-weight: bold; color: ${purple}; letter-spacing: 0.04em; margin: 0 0 4px; }
+    .source-map { color: #555555; font-size: 9.5pt; }
+    p { margin: 0 0 8px; }
+  `;
+
+  const printOnlyStyles = `
+    @page { margin: 22mm 25mm; }
+    .cover { page-break-after: always; }
+    .header-row { display: flex; justify-content: space-between; font-size: 11pt; padding-bottom: 8px; }
+    .fill-in-row { display: flex; justify-content: center; gap: 50px; }
+    .question { page-break-before: always; }
+    .question-title { font-weight: bold; font-size: 12pt; margin: 0 0 10px; }
+    .marks { float: right; font-weight: normal; font-size: 10pt; color: #333333; flex-shrink: 0; margin-left: 8px; white-space: nowrap; }
+    .subq-prompt { display: flex; gap: 8px; align-items: flex-start; }
+    .subq-label { font-weight: bold; min-width: 28px; flex-shrink: 0; }
+    .subq-text { flex: 1; text-align: justify; }
+  `;
+
+  const wordOnlyStyles = `
+    @page Section1 { size: 210mm 297mm; margin: 22mm 25mm; mso-page-orientation: portrait; }
+    div.Section1 { page: Section1; }
+    .cover { mso-element: para-border-div; mso-special-character: line-break; page-break-after: always; mso-page-break-after: always; }
+    table.header-row, table.fill-in-row, table.title-row, table.subq-row { width: 100%; border-collapse: collapse; margin: 0; }
+    table.header-row td { font-size: 11pt; padding-bottom: 8px; vertical-align: top; }
+    table.header-row td.hr-right { text-align: right; }
+    table.fill-in-row { width: auto; margin: 0 auto; }
+    table.fill-in-row td { padding: 0 10px; white-space: nowrap; }
+    table.fill-in-row td.fill-gap { width: 50px; }
+    .question { mso-page-break-before: always; page-break-before: always; }
+    table.title-row td, table.subq-row td { vertical-align: top; }
+    table.title-row td.title-left { font-weight: bold; font-size: 12pt; }
+    table.title-row td.title-right, table.subq-row td.subq-marks { text-align: right; font-size: 10pt; color: #333333; white-space: nowrap; width: 80px; }
+    table.subq-row td.subq-label { font-weight: bold; width: 30px; }
+    table.subq-row td.subq-text { text-align: justify; }
+  `;
 
   return `<!doctype html>
-<html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8" />
-  <title>${exam.title}</title>
+  <title>${escapeHtml(exam.title)}</title>
+  ${isWord ? `<!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Print</w:View>
+      <w:DoNotOptimizeForBrowser/>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->` : ''}
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.45; color: #1A0033; }
-    pre { white-space: pre-wrap; font-family: Arial, sans-serif; }
+    ${sharedStyles}
+    ${isWord ? wordOnlyStyles : printOnlyStyles}
   </style>
 </head>
-<body><pre>${escaped}</pre></body>
+<body>
+${coverPage}
+${questionPages}
+</body>
 </html>`;
 }
 
@@ -158,6 +326,24 @@ export default function MockExamsPage() {
     await navigator.clipboard.writeText(examText);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const handlePrintPdf = () => {
+    const html = buildDocHtml(selectedExam, showAnswers);
+    const printWindow = window.open('', '_blank');
+
+    if (!printWindow) {
+      downloadText(`${slug(selectedExam.title)}${showAnswers ? '-mark-scheme' : ''}.html`, html, 'text/html;charset=utf-8');
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.setTimeout(() => {
+      printWindow.print();
+    }, 250);
   };
 
   return (
@@ -372,15 +558,15 @@ export default function MockExamsPage() {
                   TXT
                 </button>
                 <button
-                  onClick={() => downloadText(`${slug(selectedExam.title)}${showAnswers ? '-mark-scheme' : ''}.doc`, buildDocHtml(selectedExam, showAnswers), 'application/msword;charset=utf-8')}
+                  onClick={() => downloadText(`${slug(selectedExam.title)}${showAnswers ? '-mark-scheme' : ''}.doc`, buildDocHtml(selectedExam, showAnswers, 'word'), 'application/msword;charset=utf-8')}
                   className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200"
                 >
                   <FileText size={15} />
                   DOC
                 </button>
-                <button onClick={() => window.print()} className="flex items-center gap-2 rounded-lg bg-[#3D0066] px-3 py-2 text-sm font-semibold text-white hover:bg-[#6B0099]">
+                <button onClick={handlePrintPdf} className="flex items-center gap-2 rounded-lg bg-[#3D0066] px-3 py-2 text-sm font-semibold text-white hover:bg-[#6B0099]">
                   <Printer size={15} />
-                  Print/PDF
+                  PDF
                 </button>
               </div>
             </div>
