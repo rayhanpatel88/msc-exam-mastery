@@ -6,8 +6,9 @@ import { Module, MasteryStatus, Topic } from '@/data/modules';
 import { getProgress, setProgress } from '@/lib/storage';
 import { TopicCard } from './TopicCard';
 import { ProgressBar } from './ProgressBar';
-import { ChevronRight, FileText, BookOpen, TestTube, FileCheck, Download } from 'lucide-react';
+import { ChevronRight, FileText, BookOpen, TestTube, FileCheck, Download, ExternalLink, PlayCircle } from 'lucide-react';
 import { clsx } from 'clsx';
+import { weekVideos, youtubeUrl } from './WeekDetail';
 
 interface ModulePageProps {
   module: Module;
@@ -35,7 +36,8 @@ export function ModulePage({ module, weekBaseHref }: ModulePageProps) {
   const [expandedWeek, setExpandedWeek] = useState<number | null>(1);
 
   useEffect(() => {
-    setProgressState(getProgress());
+    const timer = window.setTimeout(() => setProgressState(getProgress()), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleStatusChange = (topicId: string, status: MasteryStatus) => {
@@ -103,6 +105,7 @@ export function ModulePage({ module, weekBaseHref }: ModulePageProps) {
           ).length;
           const weekPct = weekTopics.length > 0 ? Math.round((weekMastered / weekTopics.length) * 100) : 0;
           const isExpanded = expandedWeek === week.week;
+          const videos = weekVideos[module.id]?.[week.week] ?? [];
 
           return (
             <div key={week.week} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -147,6 +150,38 @@ export function ModulePage({ module, weekBaseHref }: ModulePageProps) {
                       />
                     ))}
                   </div>
+
+                  {videos.length > 0 && (
+                    <div className="mt-2 mb-4">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">YouTube support</h4>
+                        <Link href="/videos" className="text-xs font-semibold text-[#3D0066] hover:underline">
+                          Full library
+                        </Link>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {videos.map((video) => (
+                          <a
+                            key={`${week.week}-${video.youtubeId}-${video.title}`}
+                            href={youtubeUrl(video)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={clsx(
+                              'inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all hover:shadow-sm',
+                              module.id === 'database-systems'
+                                ? 'border-[#3D0066]/20 bg-[#3D0066]/5 text-[#3D0066] hover:bg-[#3D0066]/10'
+                                : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100',
+                            )}
+                            title={video.note}
+                          >
+                            <PlayCircle size={13} className="shrink-0" />
+                            <span className="truncate">{video.title}</span>
+                            <ExternalLink size={11} className="shrink-0 opacity-60" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {week.files.length > 0 && (
                     <div className="mt-2">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Video, ExternalLink, PlayCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Video, ExternalLink, PlayCircle, ChevronDown, ChevronUp, Download, FileCheck } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface Resource {
@@ -25,6 +25,129 @@ interface ModuleGroup {
   colour: string; // tailwind bg for section header
   sections: Section[];
 }
+
+interface PracticeFile {
+  name: string;
+  role: 'lab' | 'solution' | 'data' | 'lecture';
+  path: string;
+}
+
+const fileHref = (path: string) => `/files/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
+
+const practicePacks: Record<string, PracticeFile[]> = {
+  'db-relational-algebra': [
+    { name: 'Lab week 1 (1).docx', role: 'lab', path: 'Database Systems/Week 2/Lab week 1 (1).docx' },
+    { name: 'Lab week 1 - solutions (2).docx', role: 'solution', path: 'Database Systems/Week 2/Lab week 1 - solutions (2).docx' },
+    { name: 'Lab week 2.docx', role: 'lab', path: 'Database Systems/Week 3/Lab week 2.docx' },
+    { name: 'Lab week 2 solutions (3).docx', role: 'solution', path: 'Database Systems/Week 3/Lab week 2 solutions (3).docx' },
+  ],
+  'db-er-diagrams': [
+    { name: 'Lab week 5 (1).docx', role: 'lab', path: 'Database Systems/Week 7/Lab week 5 (1).docx' },
+    { name: 'Lab week 5 - Solutions (1).docx', role: 'solution', path: 'Database Systems/Week 7/Lab week 5 - Solutions (1).docx' },
+  ],
+  'db-attribute-closure': [
+    { name: 'Tutorial on Functional Dependencies and Keys.docx', role: 'lab', path: 'Database Systems/Week 8/Tutorial on Functional Dependencies and Keys.docx' },
+    { name: 'Lab week 6 (1).docx', role: 'lab', path: 'Database Systems/Week 8/Lab week 6 (1).docx' },
+    { name: 'Lab week 6 - Solutions (1).docx', role: 'solution', path: 'Database Systems/Week 8/Lab week 6 - Solutions (1).docx' },
+  ],
+  'db-normalisation-1nf-3nf': [
+    { name: 'Lab week 7.docx', role: 'lab', path: 'Database Systems/Week 9/Lab week 7.docx' },
+    { name: 'Lab 7 solutions (1).zip', role: 'solution', path: 'Database Systems/Week 9/Lab 7 solutions (1).zip' },
+    { name: 'Lab week 8.docx', role: 'lab', path: 'Database Systems/Week 10/Lab week 8.docx' },
+    { name: 'Lab week 8 - Solutions (2).docx', role: 'solution', path: 'Database Systems/Week 10/Lab week 8 - Solutions (2).docx' },
+  ],
+  'db-bcnf': [
+    { name: 'Lab week 8.docx', role: 'lab', path: 'Database Systems/Week 10/Lab week 8.docx' },
+    { name: 'Lab week 8 - Solutions (2).docx', role: 'solution', path: 'Database Systems/Week 10/Lab week 8 - Solutions (2).docx' },
+  ],
+  'db-lossless': [
+    { name: 'Lab week 8.docx', role: 'lab', path: 'Database Systems/Week 10/Lab week 8.docx' },
+    { name: 'Lab week 8 - Solutions (2).docx', role: 'solution', path: 'Database Systems/Week 10/Lab week 8 - Solutions (2).docx' },
+  ],
+  'db-dependency-preservation': [
+    { name: 'Lab week 8.docx', role: 'lab', path: 'Database Systems/Week 10/Lab week 8.docx' },
+    { name: 'Lab week 8 - Solutions (2).docx', role: 'solution', path: 'Database Systems/Week 10/Lab week 8 - Solutions (2).docx' },
+  ],
+  'db-acid': [
+    { name: 'Lab week 8.docx', role: 'lab', path: 'Database Systems/Week 10/Lab week 8.docx' },
+    { name: 'Lab week 8 - Solutions (2).docx', role: 'solution', path: 'Database Systems/Week 10/Lab week 8 - Solutions (2).docx' },
+  ],
+  'db-isolation-levels': [
+    { name: 'Lab week 9 (2).docx', role: 'lab', path: 'Database Systems/Week 11/Lab week 9 (2).docx' },
+    { name: 'Lab week 9 - Solutions (2).docx', role: 'solution', path: 'Database Systems/Week 11/Lab week 9 - Solutions (2).docx' },
+  ],
+  'db-serialisability': [
+    { name: 'Lab week 9 (2).docx', role: 'lab', path: 'Database Systems/Week 11/Lab week 9 (2).docx' },
+    { name: 'Lab week 9 - Solutions (2).docx', role: 'solution', path: 'Database Systems/Week 11/Lab week 9 - Solutions (2).docx' },
+  ],
+  'db-sql-main': [
+    { name: 'Lab week 1 (1).docx', role: 'lab', path: 'Database Systems/Week 2/Lab week 1 (1).docx' },
+    { name: 'Lab week 1 - solutions (2).docx', role: 'solution', path: 'Database Systems/Week 2/Lab week 1 - solutions (2).docx' },
+    { name: 'Lab week 3.docx', role: 'lab', path: 'Database Systems/Week 4/Lab week 3.docx' },
+    { name: 'Lab week 3 - solutions (3).docx', role: 'solution', path: 'Database Systems/Week 4/Lab week 3 - solutions (3).docx' },
+  ],
+  'db-self-join': [
+    { name: 'Lab week 2.docx', role: 'lab', path: 'Database Systems/Week 3/Lab week 2.docx' },
+    { name: 'Lab week 2 solutions (3).docx', role: 'solution', path: 'Database Systems/Week 3/Lab week 2 solutions (3).docx' },
+  ],
+  'db-cte': [
+    { name: 'Lab week 6 (1).docx', role: 'lab', path: 'Database Systems/Week 8/Lab week 6 (1).docx' },
+    { name: 'Lab week 6 - Solutions (1).docx', role: 'solution', path: 'Database Systems/Week 8/Lab week 6 - Solutions (1).docx' },
+  ],
+  'db-window': [
+    { name: 'Lab week 6 (1).docx', role: 'lab', path: 'Database Systems/Week 8/Lab week 6 (1).docx' },
+    { name: 'Lab week 6 - Solutions (1).docx', role: 'solution', path: 'Database Systems/Week 8/Lab week 6 - Solutions (1).docx' },
+  ],
+  'ids-sampling': [
+    { name: 'Practical 3.docx', role: 'lab', path: 'Intro to Data Science/Week 3/Practical 3.docx' },
+    { name: '03_practical (1).Rmd', role: 'lab', path: 'Intro to Data Science/Week 3/03_practical (1).Rmd' },
+  ],
+  'ids-summary-stats': [
+    { name: 'Practical 5.docx', role: 'lab', path: 'Intro to Data Science/Week 5/Practical 5.docx' },
+    { name: '05_practical.Rmd.txt', role: 'lab', path: 'Intro to Data Science/Week 5/05_practical.Rmd.txt' },
+  ],
+  'ids-tidy-data': [
+    { name: 'Practical 6.docx', role: 'lab', path: 'Intro to Data Science/Week 6/Practical 6.docx' },
+    { name: '06_practical.Rmd.txt', role: 'lab', path: 'Intro to Data Science/Week 6/06_practical.Rmd.txt' },
+    { name: 'files_for_practical_06 (1).zip', role: 'data', path: 'Intro to Data Science/Week 6/files_for_practical_06 (1).zip' },
+  ],
+  'ids-ggplot2-advanced': [
+    { name: 'Practical 8.docx', role: 'lab', path: 'Intro to Data Science/Week 8/Practical 8.docx' },
+    { name: '08_practical (1).Rmd', role: 'lab', path: 'Intro to Data Science/Week 8/08_practical (1).Rmd' },
+    { name: 'Chapter 10.docx', role: 'lecture', path: 'Intro to Data Science/Week 10/Chapter 10.docx' },
+  ],
+  'ids-r-foundations': [
+    { name: 'Practical 1.docx', role: 'lab', path: 'Intro to Data Science/Week 1/Practical 1.docx' },
+    { name: '01_practical (4).Rmd', role: 'lab', path: 'Intro to Data Science/Week 1/01_practical (4).Rmd' },
+    { name: 'Practical 2.docx', role: 'lab', path: 'Intro to Data Science/Week 2/Practical 2.docx' },
+    { name: '02_practical (1).Rmd', role: 'lab', path: 'Intro to Data Science/Week 2/02_practical (1).Rmd' },
+  ],
+  'ids-rmarkdown': [
+    { name: 'Practical 1.docx', role: 'lab', path: 'Intro to Data Science/Week 1/Practical 1.docx' },
+    { name: '01_practical (4).Rmd', role: 'lab', path: 'Intro to Data Science/Week 1/01_practical (4).Rmd' },
+  ],
+  'ids-indexing': [
+    { name: 'Practical 2.docx', role: 'lab', path: 'Intro to Data Science/Week 2/Practical 2.docx' },
+    { name: '02_practical (1).Rmd', role: 'lab', path: 'Intro to Data Science/Week 2/02_practical (1).Rmd' },
+  ],
+  'ids-dplyr': [
+    { name: 'Practical 4.docx', role: 'lab', path: 'Intro to Data Science/Week 4/Practical 4.docx' },
+    { name: '04_practical (1).Rmd', role: 'lab', path: 'Intro to Data Science/Week 4/04_practical (1).Rmd' },
+  ],
+  'ids-read-csv': [
+    { name: 'Practical 6.docx', role: 'lab', path: 'Intro to Data Science/Week 6/Practical 6.docx' },
+    { name: '06_practical.Rmd.txt', role: 'lab', path: 'Intro to Data Science/Week 6/06_practical.Rmd.txt' },
+    { name: 'files_for_practical_06 (1).zip', role: 'data', path: 'Intro to Data Science/Week 6/files_for_practical_06 (1).zip' },
+  ],
+  'ids-dates-strings-factors': [
+    { name: 'Practical 6.docx', role: 'lab', path: 'Intro to Data Science/Week 6/Practical 6.docx' },
+    { name: '06_practical.Rmd.txt', role: 'lab', path: 'Intro to Data Science/Week 6/06_practical.Rmd.txt' },
+  ],
+  'ids-ggplot2-core': [
+    { name: 'Practical 7.docx', role: 'lab', path: 'Intro to Data Science/Week 7/Practical 7.docx' },
+    { name: '07_practical (2).Rmd', role: 'lab', path: 'Intro to Data Science/Week 7/07_practical (2).Rmd' },
+  ],
+};
 
 const moduleGroups: ModuleGroup[] = [
   {
@@ -373,6 +496,7 @@ export default function VideosPage() {
               <div className="space-y-2">
                 {section.resources.map((resource) => {
                   const isOpen = openId === resource.id;
+                  const files = practicePacks[resource.id] ?? [];
                   return (
                     <div
                       key={resource.id}
@@ -444,6 +568,48 @@ export default function VideosPage() {
                               YouTube
                             </a>
                           </div>
+                          {files.length > 0 && (
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                              <div className="mb-2 flex items-center gap-2">
+                                <FileCheck size={14} className="text-[#3D0066]" />
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                                  Practice pack
+                                </p>
+                              </div>
+                              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                {files.map((file) => (
+                                  <a
+                                    key={`${resource.id}-${file.path}`}
+                                    href={fileHref(file.path)}
+                                    download={file.name}
+                                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 transition-colors hover:border-[#3D0066]/30 hover:bg-[#F8F7FF]"
+                                  >
+                                    <span
+                                      className={clsx(
+                                        'rounded px-1.5 py-0.5 text-[10px] font-bold uppercase',
+                                        file.role === 'solution'
+                                          ? 'bg-green-100 text-green-700'
+                                          : file.role === 'data'
+                                          ? 'bg-amber-100 text-amber-800'
+                                          : file.role === 'lecture'
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : 'bg-purple-100 text-purple-700',
+                                      )}
+                                    >
+                                      {file.role}
+                                    </span>
+                                    <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                                    <Download size={13} className="shrink-0 text-gray-400" />
+                                  </a>
+                                ))}
+                              </div>
+                              {group.module === 'ids' && (
+                                <p className="mt-2 text-[11px] text-gray-400">
+                                  Weekly solution sheets were not present in the uploaded Intro to Data Science practical folders, so the available practical/Rmd/data files are linked here.
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

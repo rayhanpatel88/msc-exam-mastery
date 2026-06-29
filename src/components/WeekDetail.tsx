@@ -6,7 +6,7 @@ import { Module, MasteryStatus } from '@/data/modules';
 import { getProgress, setProgress } from '@/lib/storage';
 import { TopicCard } from './TopicCard';
 import { ProgressBar } from './ProgressBar';
-import { ArrowLeft, FileText, BookOpen, TestTube, FileCheck, Download, Archive } from 'lucide-react';
+import { ArrowLeft, FileText, BookOpen, TestTube, FileCheck, Download, Archive, ExternalLink, PlayCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const fileRoleColors: Record<string, string> = {
@@ -24,6 +24,99 @@ const fileRoleIcons: Record<string, React.ReactNode> = {
   data: <FileText size={14} />,
   mock: <FileText size={14} />,
 };
+
+export interface WeekVideoResource {
+  title: string;
+  type: 'playlist' | 'video';
+  youtubeId: string;
+  note: string;
+}
+
+export const weekVideos: Record<string, Record<number, WeekVideoResource[]>> = {
+  'database-systems': {
+    1: [
+      { title: 'Relational Algebra - Full Playlist', type: 'playlist', youtubeId: 'PLBlnK6fEyqRiXuITH4oB-wk2mjEADVHwU', note: 'Use before selection, projection and join practice.' },
+    ],
+    2: [
+      { title: 'SQL & Database Systems - Full Playlist', type: 'playlist', youtubeId: 'PLNcg_FV9n7qZY_2eAtUzEUulNjTJREhQe', note: 'Use for SELECT/FROM/WHERE and basic joins.' },
+      { title: 'Relational Algebra - Full Playlist', type: 'playlist', youtubeId: 'PLBlnK6fEyqRiXuITH4oB-wk2mjEADVHwU', note: 'Use for sigma, pi and join expressions.' },
+    ],
+    3: [
+      { title: 'Self-Joins in SQL', type: 'video', youtubeId: 'XKUE1QFbhxs', note: 'Use before same-table pair questions.' },
+      { title: 'Relational Algebra - Full Playlist', type: 'playlist', youtubeId: 'PLBlnK6fEyqRiXuITH4oB-wk2mjEADVHwU', note: 'Use for aggregation and join consolidation.' },
+    ],
+    4: [
+      { title: 'SQL & Database Systems - Full Playlist', type: 'playlist', youtubeId: 'PLNcg_FV9n7qZY_2eAtUzEUulNjTJREhQe', note: 'Use for GROUP BY, HAVING and aggregate queries.' },
+    ],
+    5: [
+      { title: 'SQL & Database Systems - Full Playlist', type: 'playlist', youtubeId: 'PLNcg_FV9n7qZY_2eAtUzEUulNjTJREhQe', note: 'Use for nested and correlated subqueries.' },
+      { title: 'ER Diagrams & ER to Relational Mapping', type: 'video', youtubeId: 'LowjDtiNlk4', note: 'Use before ER design questions.' },
+    ],
+    6: [
+      { title: 'SQL & Database Systems - Full Playlist', type: 'playlist', youtubeId: 'PLNcg_FV9n7qZY_2eAtUzEUulNjTJREhQe', note: 'Use for EXISTS, NOT EXISTS and subquery patterns.' },
+      { title: 'Common Table Expressions', type: 'video', youtubeId: 'rIcB4zMYMas', note: 'Use when rewriting complex nested queries.' },
+    ],
+    7: [
+      { title: 'ER Diagrams & ER to Relational Mapping', type: 'video', youtubeId: 'LowjDtiNlk4', note: 'Use before mapping ER diagrams to schemas.' },
+    ],
+    8: [
+      { title: 'Functional Dependencies & Attribute Closure', type: 'video', youtubeId: 'AGFUfLPFJ7w', note: 'Use before candidate key and closure questions.' },
+      { title: 'Window Functions', type: 'video', youtubeId: 'LJC8277LONg', note: 'Use for advanced SQL ranking tasks.' },
+    ],
+    9: [
+      { title: '1NF, 2NF and 3NF - Worked Examples', type: 'video', youtubeId: 'GFQaEYEc8_8', note: 'Use before 2NF decomposition practice.' },
+    ],
+    10: [
+      { title: 'BCNF - Definition & Decomposition Algorithm', type: 'video', youtubeId: 'VWnKUKH4tLg', note: 'Use before BCNF decomposition questions.' },
+      { title: 'Lossless Decomposition', type: 'video', youtubeId: 'zb8ESEf36Zc', note: 'Use for lossless-join proof practice.' },
+      { title: 'ACID Transactions', type: 'video', youtubeId: 'GAe5oB742dw', note: 'Use before transaction theory questions.' },
+    ],
+    11: [
+      { title: 'Conflict Serialisability & Precedence Graphs', type: 'video', youtubeId: 's8QlJoL1G6w', note: 'Use before drawing precedence graphs.' },
+      { title: 'Isolation Levels', type: 'video', youtubeId: '-gxyut1VLcs', note: 'Use for dirty, non-repeatable and phantom reads.' },
+    ],
+  },
+  'intro-data-science': {
+    1: [
+      { title: 'R Foundations - Vectors, Lists, Data Frames', type: 'playlist', youtubeId: 'PLtL57Fdbwb_AWmWWrFV_pLqq2uicpUIO9', note: 'Use before RStudio and object practice.' },
+      { title: 'R Markdown - Chunk Options', type: 'video', youtubeId: 'rs27coOzpHA', note: 'Use before knitting practical work.' },
+    ],
+    2: [
+      { title: 'R Foundations - Vectors, Lists, Data Frames', type: 'playlist', youtubeId: 'PLtL57Fdbwb_AWmWWrFV_pLqq2uicpUIO9', note: 'Use for vectors, lists, matrices and data frames.' },
+      { title: 'R Logical Indexing, %in% and which()', type: 'video', youtubeId: 'T6aSTrBYvCg', note: 'Use before predicting indexing outputs.' },
+    ],
+    3: [
+      { title: 'Sampling Methods & Study Design', type: 'video', youtubeId: '9PaR1TsvnJs', note: 'Use for population, sample and bias questions.' },
+    ],
+    4: [
+      { title: 'Data Wrangling with dplyr', type: 'playlist', youtubeId: 'PLtL57Fdbwb_C6RS0JtBojTNOMVlgpeJkS', note: 'Use before filter, select, mutate and summarise tasks.' },
+    ],
+    5: [
+      { title: 'Summary Statistics', type: 'playlist', youtubeId: 'PLtL57Fdbwb_Chn-dNR0qBjH3esKS2MXY3', note: 'Use before mean, SD, IQR and distribution questions.' },
+    ],
+    6: [
+      { title: 'Dates, Strings & Factors', type: 'playlist', youtubeId: 'PLtL57Fdbwb_AY2O3fqi5MuCTDJC-S6cbf', note: 'Use for lubridate, stringr and factors.' },
+      { title: 'Reading & Parsing Data in R', type: 'video', youtubeId: 'c9okn6C0lkE', note: 'Use before import and parsing exercises.' },
+    ],
+    7: [
+      { title: 'ggplot2 - Grammar of Graphics', type: 'playlist', youtubeId: 'PLtL57Fdbwb_B5v9p9vGVjdjrvWZL7peTy', note: 'Use before recreating plots from memory.' },
+    ],
+    8: [
+      { title: 'ggplot2 Advanced & Figure Critique', type: 'playlist', youtubeId: 'PLtL57Fdbwb_D-iZXfWd2myjpYXSg_yi9G', note: 'Use for themes, scales, labels and legends.' },
+    ],
+    9: [
+      { title: 'Tidy Data', type: 'video', youtubeId: '1L0atkGWqvc', note: 'Use before pivot_longer and pivot_wider practice.' },
+    ],
+    10: [
+      { title: 'ggplot2 Advanced & Figure Critique', type: 'playlist', youtubeId: 'PLtL57Fdbwb_D-iZXfWd2myjpYXSg_yi9G', note: 'Use before good/bad visualisation critique.' },
+    ],
+  },
+};
+
+export const youtubeUrl = (video: WeekVideoResource) =>
+  video.type === 'playlist'
+    ? `https://www.youtube.com/playlist?list=${video.youtubeId}`
+    : `https://www.youtube.com/watch?v=${video.youtubeId}`;
 
 interface WeekDetailProps {
   module: Module;
@@ -48,7 +141,8 @@ export function WeekDetail({
   const [progress, setProgressState] = useState<Record<string, MasteryStatus>>({});
 
   useEffect(() => {
-    setProgressState(getProgress());
+    const timer = window.setTimeout(() => setProgressState(getProgress()), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleStatusChange = (topicId: string, status: MasteryStatus) => {
@@ -74,6 +168,7 @@ export function WeekDetail({
 
   const prevWeek = weekNum > 1 ? weekNum - 1 : null;
   const nextWeek = weekNum < maxWeek ? weekNum + 1 : null;
+  const videos = weekVideos[module.id]?.[weekNum] ?? [];
 
   return (
     <div className="space-y-6">
@@ -106,6 +201,47 @@ export function WeekDetail({
           <ProgressBar value={pct} color="gold" size="md" />
         </div>
       </div>
+
+      {videos.length > 0 && (
+        <div>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-[#1A0033]">Video Support</h2>
+            <Link href="/videos" className="text-xs font-semibold text-[#3D0066] hover:underline">
+              Full video library
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {videos.map((video) => (
+              <div key={`${video.youtubeId}-${video.title}`} className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="flex items-start gap-3">
+                  <div className={clsx(
+                    'rounded-lg p-2',
+                    module.id === 'database-systems' ? 'bg-[#3D0066]/10' : 'bg-amber-100',
+                  )}>
+                    <PlayCircle size={18} className={module.id === 'database-systems' ? 'text-[#3D0066]' : 'text-amber-700'} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                      {video.type}
+                    </div>
+                    <h3 className="text-sm font-bold text-[#1A0033]">{video.title}</h3>
+                    <p className="mt-1 text-xs text-gray-500">{video.note}</p>
+                    <a
+                      href={youtubeUrl(video)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-red-700"
+                    >
+                      <ExternalLink size={13} />
+                      Open YouTube
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="text-lg font-bold text-[#1A0033] mb-3">Topics</h2>
