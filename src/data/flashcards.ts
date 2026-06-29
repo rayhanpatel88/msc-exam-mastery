@@ -1177,4 +1177,39 @@ df |>
     module: 'ids',
     difficulty: 'medium',
   },
+  {
+    id: 'db-self-join-1',
+    front: 'Write a SQL query to find all pairs of students enrolled in the same course. Each pair should appear only once (not both (A,B) and (B,A)).',
+    back: `SELECT s1.name AS student1, s2.name AS student2, e1.courseID
+FROM Enrolment e1
+  JOIN Enrolment e2
+    ON e1.courseID = e2.courseID
+    AND e1.studentID < e2.studentID
+  JOIN Student s1 ON e1.studentID = s1.studentID
+  JOIN Student s2 ON e2.studentID = s2.studentID
+ORDER BY e1.courseID, s1.name;
+
+Key pattern: join the same table twice with different aliases (e1, e2).
+Use < (not <>) to prevent duplicate pairs — < ensures each pair appears exactly once.
+Then join back to Student to get names, since Enrolment stores IDs not names.`,
+    topic: 'SQL Self Join',
+    module: 'db',
+    difficulty: 'medium',
+  },
+  {
+    id: 'db-self-join-2',
+    front: 'TRAP: Why does using <> instead of < in a self-join return duplicate pairs?',
+    back: `Using <> (not equal) returns both (Alice, Bob) and (Bob, Alice) because:
+- When e1=Alice and e2=Bob → <> condition is TRUE → row included
+- When e1=Bob and e2=Alice → <> condition is TRUE → row included again
+
+Using < (less than) returns each pair only once because:
+- When e1.studentID=1 and e2.studentID=2 → 1 < 2 TRUE → included
+- When e1.studentID=2 and e2.studentID=1 → 2 < 1 FALSE → excluded
+
+Rule: always use t1.id < t2.id in a self-join to find unique pairs.`,
+    topic: 'SQL Self Join',
+    module: 'db',
+    difficulty: 'easy',
+  },
 ];
