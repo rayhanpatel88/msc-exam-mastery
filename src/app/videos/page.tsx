@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Video, ExternalLink, PlayCircle, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Video, ExternalLink, PlayCircle, ChevronDown, ChevronUp, AlertTriangle, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 
-type ResourceType = 'playlist' | 'video';
+type ResourceType = 'playlist' | 'video' | 'search';
 
 interface VideoResource {
   id: string;
@@ -12,10 +12,11 @@ interface VideoResource {
   description: string;
   module: 'db' | 'ids';
   type: ResourceType;
-  youtubeId: string; // playlistId or videoId
+  youtubeId: string; // playlistId, videoId, or search query string
   topics: string[];
   afterWatching: string;
   isGapFiller?: boolean;
+  isNewGap?: boolean; // second-pass gaps found after initial review
 }
 
 const resources: VideoResource[] = [
@@ -182,6 +183,94 @@ const resources: VideoResource[] = [
     topics: ['Scales and coordinates', 'Labels and annotations', 'Custom themes', 'Legends and colour palettes', 'Good vs bad graphs', 'Figure critique checklist'],
     afterWatching: 'Review Week 10 Chapter on good vs bad graphs. Critique 3 real graphs.',
   },
+
+  // ── DB second-pass gaps ──────────────────────────────────────────────────
+  {
+    id: 'db-er-to-relational',
+    title: 'ER Diagram to Relational Schema — Mapping Rules',
+    description: 'How to convert an ER diagram to a set of relational tables: entities, 1:N, M:N relationships, weak entities, and ISA hierarchies. Week 7 lecture content with no video equivalent until now.',
+    module: 'db',
+    type: 'search',
+    youtubeId: 'ER diagram to relational schema mapping rules database',
+    topics: ['Entity set → table', 'M:N relationship → separate table with two FKs', '1:N → FK on the N-side', 'Weak entity → include owner PK', 'ISA hierarchy — options'],
+    afterWatching: 'Do Lab week 5 (ER mapping) from memory. Convert the ER diagram to tables without looking at the solution.',
+    isGapFiller: true,
+    isNewGap: true,
+  },
+  {
+    id: 'db-advanced-sql',
+    title: 'Advanced SQL — CASE, CTEs, Window Functions',
+    description: 'CASE WHEN expressions, WITH (common table expressions), RANK() and ROW_NUMBER() window functions, UNION / INTERSECT / EXCEPT. Covers the Week 8 Advanced SQL lecture slide content.',
+    module: 'db',
+    type: 'search',
+    youtubeId: 'advanced SQL CASE WHEN WITH CTE window functions RANK ROW_NUMBER',
+    topics: ['CASE WHEN THEN ELSE END', 'WITH cte AS (...) SELECT ...', 'RANK() OVER (PARTITION BY ... ORDER BY ...)', 'ROW_NUMBER()', 'UNION vs UNION ALL', 'INTERSECT / EXCEPT'],
+    afterWatching: 'Do Lab week 6 (advanced SQL) and attempt every query from memory before checking the solution.',
+    isGapFiller: true,
+    isNewGap: true,
+  },
+
+  // ── IDS second-pass gaps ─────────────────────────────────────────────────
+  {
+    id: 'ids-rmarkdown',
+    title: 'R Markdown — Chunk Options and Document Structure',
+    description: 'echo, eval, results, warning, message, results="hold" — the exact chunk options tested in Practical 1 Exercises 1.2 and 1.3. None of the six R playlists cover R Markdown at all. This is a direct exam topic.',
+    module: 'ids',
+    type: 'search',
+    youtubeId: 'R Markdown chunk options echo eval results hold hide knitr tutorial',
+    topics: ['echo=FALSE — hide code, run it', 'eval=FALSE — show code, do not run', 'results="hide" — run, hide output', 'results="hold" — show all output after chunk', 'warning=FALSE / message=FALSE', 'Global chunk options with knitr::opts_chunk$set()'],
+    afterWatching: 'Redo Practical 1 Exercises 1.2 and 1.3 entirely from memory. Write each chunk option and its effect without looking at notes.',
+    isGapFiller: true,
+    isNewGap: true,
+  },
+  {
+    id: 'ids-data-reading',
+    title: 'Reading and Parsing Data in R',
+    description: 'read_csv() vs read_csv2(), read_delim(), read_lines(), parse_double(), parse_datetime(), parse_number() with locale(), and clean_names() from the janitor package. All tested in Practical 6.',
+    module: 'ids',
+    type: 'search',
+    youtubeId: 'read_csv read_csv2 parse_double locale readr R tutorial',
+    topics: ['read_csv() vs read_csv2() — comma vs semicolon delimiter', 'read_delim(delim=";")', 'parse_double(locale=locale(decimal_mark=","))', 'parse_datetime(format="%B %d, %Y %H:%M:%S")', 'parse_number() — strips non-numeric characters', 'clean_names() from janitor package'],
+    afterWatching: 'Do Practical 6 Exercises 6.1–6.3 (ramen_ratings.csv and market_cap.csv) from scratch.',
+    isGapFiller: true,
+    isNewGap: true,
+  },
+  {
+    id: 'ids-logical-indexing',
+    title: 'R Logical Indexing, %in% and which()',
+    description: 'x[y > 10] logical indexing, the %in% operator, which(), and the trap that letters[27] returns NA not an error. Practical 2 Exercise 2.6 tests these at exam depth.',
+    module: 'ids',
+    type: 'search',
+    youtubeId: 'R logical indexing vector subsetting %in% which() tutorial',
+    topics: ['Logical indexing: x[x > 10]', 'x[y > 10] — index with a different vector', '%in% — membership test', 'which() — returns positions of TRUE', 'Out-of-bounds indexing returns NA not error', '"b" == letters vs "b" %in% letters'],
+    afterWatching: 'Do Practical 2 Exercise 2.6 entirely without running any code first. Predict every output by hand.',
+    isGapFiller: true,
+    isNewGap: true,
+  },
+  {
+    id: 'ids-tidy-data',
+    title: 'Tidy Data, drop_na() and Implicit vs Explicit Missingness',
+    description: 'What makes data tidy, explicit vs implicit missing values, drop_na(), and the full pivot_longer workflow with real data including locale parsing. Practical 6 Exercises 6.3–6.5.',
+    module: 'ids',
+    type: 'search',
+    youtubeId: 'tidy data R tidyr pivot_longer drop_na missing values implicit explicit',
+    topics: ['Tidy data: one variable per column, one observation per row', 'Implicit missingness — row simply absent', 'Explicit missingness — NA present in cell', 'drop_na() — converts explicit to implicit', 'pivot_longer() full workflow with names_to / values_to', 'pivot_wider() to reverse'],
+    afterWatching: 'Do Practical 6 Exercises 6.3–6.5 (market_cap.csv and cats-dogs tidy/wide). Reshape both ways from memory.',
+    isGapFiller: true,
+    isNewGap: true,
+  },
+  {
+    id: 'ids-sampling',
+    title: 'Sampling Methods and Study Design',
+    description: 'Population vs sample, random sampling, stratified sampling, convenience sampling, sampling bias, observational vs experimental studies. Week 3 lecture content (3_data_collection_and_sampling.pdf).',
+    module: 'ids',
+    type: 'search',
+    youtubeId: 'population vs sample random stratified sampling bias statistics explained',
+    topics: ['Population vs sample', 'Simple random sampling', 'Stratified sampling', 'Convenience sampling and bias', 'Observational vs experimental study', 'Why sampling method affects conclusions'],
+    afterWatching: 'Write from memory: define each sampling method in one sentence. Give one example of sampling bias for each.',
+    isGapFiller: true,
+    isNewGap: true,
+  },
 ];
 
 export default function VideosPage() {
@@ -189,8 +278,9 @@ export default function VideosPage() {
   const [activeResource, setActiveResource] = useState<string | null>('db-sql');
 
   const filtered = resources.filter((r) => moduleFilter === 'all' || r.module === moduleFilter);
-  const gapFillers = filtered.filter((r) => r.isGapFiller);
-  const mainResources = filtered.filter((r) => !r.isGapFiller);
+  const gapFillers = filtered.filter((r) => r.isGapFiller && !r.isNewGap);
+  const newGaps = filtered.filter((r) => r.isNewGap);
+  const mainResources = filtered.filter((r) => !r.isGapFiller && !r.isNewGap);
 
   const embedUrl = (r: VideoResource) =>
     r.type === 'playlist'
@@ -200,6 +290,8 @@ export default function VideosPage() {
   const externalUrl = (r: VideoResource) =>
     r.type === 'playlist'
       ? `https://www.youtube.com/playlist?list=${r.youtubeId}`
+      : r.type === 'search'
+      ? `https://www.youtube.com/results?search_query=${encodeURIComponent(r.youtubeId)}`
       : `https://www.youtube.com/watch?v=${r.youtubeId}`;
 
   const ResourceCard = ({ resource }: { resource: VideoResource }) => {
@@ -233,9 +325,14 @@ export default function VideosPage() {
                 {resource.module === 'db' ? 'Database Systems' : 'Intro to Data Science'}
               </span>
               <span className="text-[10px] font-medium text-gray-400 uppercase">
-                {resource.type === 'playlist' ? 'Playlist' : 'Video'}
+                {resource.type === 'playlist' ? 'Playlist' : resource.type === 'search' ? 'Search' : 'Video'}
               </span>
-              {resource.isGapFiller && (
+              {resource.isNewGap && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-500 text-white">
+                  Gap Filler
+                </span>
+              )}
+              {resource.isGapFiller && !resource.isNewGap && (
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500 text-white">
                   Gap Filler
                 </span>
@@ -257,37 +354,59 @@ export default function VideosPage() {
 
         {isOpen && (
           <div className="px-5 pb-5 space-y-4">
-            <div className="rounded-xl overflow-hidden border border-gray-200" style={{ aspectRatio: '16/9' }}>
-              <iframe
-                src={embedUrl(resource)}
-                title={resource.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
+            {resource.type === 'search' ? (
+              <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 p-6 flex flex-col items-center gap-3 text-center">
+                <Search size={28} className="text-red-500" />
+                <p className="text-sm font-semibold text-red-800">No specific video pinned for this topic yet.</p>
+                <p className="text-xs text-red-600 font-mono bg-white border border-red-200 rounded-lg px-3 py-2 max-w-full break-words">
+                  &ldquo;{resource.youtubeId}&rdquo;
+                </p>
+                <p className="text-xs text-red-700">Click below to search YouTube with this term. Pick the clearest, most concise video (under 20 min). Watch, then do the practical.</p>
+                <a
+                  href={externalUrl(resource)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-5 py-3 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors"
+                >
+                  <Search size={15} />
+                  Search YouTube
+                </a>
+              </div>
+            ) : (
+              <div className="rounded-xl overflow-hidden border border-gray-200" style={{ aspectRatio: '16/9' }}>
+                <iframe
+                  src={embedUrl(resource)}
+                  title={resource.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            )}
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className={clsx(
                 'border rounded-xl p-4 flex-1 min-w-0',
-                resource.isGapFiller ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200',
+                resource.isNewGap ? 'bg-red-50 border-red-200' : resource.isGapFiller ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200',
               )}>
                 <p className={clsx(
                   'text-[10px] font-bold uppercase tracking-wide mb-1',
-                  resource.isGapFiller ? 'text-amber-600' : 'text-green-600',
+                  resource.isNewGap ? 'text-red-600' : resource.isGapFiller ? 'text-amber-600' : 'text-green-600',
                 )}>After watching →</p>
-                <p className={clsx('text-sm', resource.isGapFiller ? 'text-amber-900' : 'text-green-800')}>
+                <p className={clsx('text-sm', resource.isNewGap ? 'text-red-900' : resource.isGapFiller ? 'text-amber-900' : 'text-green-800')}>
                   {resource.afterWatching}
                 </p>
               </div>
-              <a
-                href={externalUrl(resource)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors shrink-0 self-start"
-              >
-                <ExternalLink size={15} />
-                Open in YouTube
-              </a>
+              {resource.type !== 'search' && (
+                <a
+                  href={externalUrl(resource)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors shrink-0 self-start"
+                >
+                  <ExternalLink size={15} />
+                  Open in YouTube
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -339,19 +458,35 @@ export default function VideosPage() {
         </div>
       )}
 
-      {/* Gap fillers */}
+      {/* Gap fillers — pass 1 (DB theory) */}
       {gapFillers.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-500" />
             <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide">
-              DB Gap Fillers — Topics missing from the main playlist
+              DB Gap Fillers — Theory topics missing from the main playlist
             </h2>
           </div>
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-            These topics — relational algebra, FD theory, lossless decomposition, concurrency — are likely 30–40% of the Database Systems exam and are not covered by the main SQL playlist. Watch these before the exam.
+            Relational algebra, FD theory, lossless decomposition, and concurrency — likely 30–40% of the Database Systems exam. All embedded and ready to watch.
           </p>
           {gapFillers.map((r) => <ResourceCard key={r.id} resource={r} />)}
+        </div>
+      )}
+
+      {/* Gap fillers — pass 2 (deeper gaps found after review) */}
+      {newGaps.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-red-500" />
+            <h2 className="text-sm font-bold text-red-700 uppercase tracking-wide">
+              Deeper Gaps — Found after comparing videos to university practicals
+            </h2>
+          </div>
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+            These topics appear directly in the university labs and mock exams but were not covered by any playlist. No specific video is pinned yet — use the search button to find the best one, then do the practical immediately after.
+          </p>
+          {newGaps.map((r) => <ResourceCard key={r.id} resource={r} />)}
         </div>
       )}
     </div>
