@@ -72,6 +72,15 @@ const moduleGroups: ModuleGroup[] = [
             afterWatching: 'Do Lab week 7 (2NF) and Lab week 8 (3NF/BCNF) from scratch.',
           },
           {
+            id: 'db-bcnf',
+            title: 'BCNF — Definition & Decomposition Algorithm',
+            description: 'Boyce-Codd Normal Form: definition, how to identify violations, and the step-by-step decomposition algorithm. Distinct from 3NF — BCNF requires every non-trivial FD X→Y to have X as a superkey.',
+            type: 'video',
+            youtubeId: 'VWnKUKH4tLg',
+            topics: ['BCNF definition: every non-trivial FD X→Y has X as superkey', 'Difference between 3NF and BCNF', 'Finding a BCNF violation', 'Decomposition algorithm — split on violating FD', 'Repeat until all relations in BCNF', 'BCNF may not preserve dependencies'],
+            afterWatching: 'Do Lab week 8 BCNF questions. Decompose each relation by hand and verify losslessness.',
+          },
+          {
             id: 'db-lossless',
             title: 'Lossless Decomposition',
             description: 'Testing whether R → R1 ∪ R2 is lossless using the R1 ∩ R2 → R1 or R2 rule.',
@@ -129,6 +138,15 @@ const moduleGroups: ModuleGroup[] = [
             youtubeId: 'PLNcg_FV9n7qZY_2eAtUzEUulNjTJREhQe',
             topics: ['SELECT / FROM / WHERE', 'INNER / LEFT / RIGHT / FULL JOIN', 'GROUP BY / HAVING', 'Nested subqueries (IN, NOT IN)', 'Correlated subqueries', 'EXISTS / NOT EXISTS'],
             afterWatching: 'Complete the corresponding lab worksheet. Redo every query from memory before checking your solution.',
+          },
+          {
+            id: 'db-self-join',
+            title: 'Self-Joins in SQL',
+            description: 'Joining a table to itself using aliases — used to find pairs, hierarchies, and comparisons within the same relation.',
+            type: 'video',
+            youtubeId: 'XKUE1QFbhxs',
+            topics: ['Self-join with table aliases (t1, t2)', 'Finding pairs: WHERE t1.id < t2.id', 'Hierarchical data (manager/employee)', 'Combining self-join with WHERE conditions'],
+            afterWatching: 'Write from memory: a query to find all pairs of students enrolled in the same course. Use the academic system database schema.',
           },
           {
             id: 'db-cte',
