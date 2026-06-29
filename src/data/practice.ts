@@ -882,4 +882,442 @@ diamonds |>
       "After coord_flip(), forgetting that x and y labels are swapped in the rendered output — x label appears on y-axis visually and vice versa",
     ],
   },
+
+  // ===========================
+  // NEW DB PRACTICE ITEMS (5)
+  // ===========================
+  {
+    id: 'db-er-p-1',
+    prompt: `Convert the following ER diagram description to a relational schema:
+
+Entities:
+  Student(sID, name, email)
+  Course(cID, title, credits)
+
+Relationship:
+  Enrols — M:N between Student and Course, with attribute grade.
+
+Write the three CREATE TABLE statements with correct primary keys and foreign keys.`,
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'medium',
+    modelAnswer: `CREATE TABLE Student (
+  sID   VARCHAR(10) PRIMARY KEY,
+  name  VARCHAR(100) NOT NULL,
+  email VARCHAR(150)
+);
+
+CREATE TABLE Course (
+  cID     VARCHAR(10) PRIMARY KEY,
+  title   VARCHAR(200) NOT NULL,
+  credits INTEGER
+);
+
+-- Junction table for M:N relationship; grade is an attribute of the relationship
+CREATE TABLE Enrols (
+  sID    VARCHAR(10) REFERENCES Student(sID),
+  cID    VARCHAR(10) REFERENCES Course(cID),
+  grade  CHAR(2),
+  PRIMARY KEY (sID, cID)
+);`,
+    commonMistakes: [
+      "Omitting the Enrols table — a M:N relationship always requires a separate junction table; you cannot store it with just a FK in Student or Course",
+      "Putting grade on the Student or Course table — grade is a property of the relationship (a particular student's grade in a particular course), so it belongs in Enrols",
+      "Using only sID or only cID as the PK of Enrols — the composite PK (sID, cID) is required to ensure a student cannot enrol in the same course twice",
+      "Forgetting REFERENCES clauses — the FKs in Enrols must reference the PKs of Student and Course to enforce referential integrity",
+    ],
+  },
+  {
+    id: 'db-er-p-2',
+    prompt: `An ER diagram contains a weak entity set Dependent with discriminator attribute depName. It is related to Employee (empID, name, salary) via an identifying relationship HasDependent (1:N, Employee to Dependent). Dependent also has attribute birthYear.
+
+(a) Explain why Dependent is a weak entity set.
+(b) Write the relational schema for both tables, indicating PKs and FKs.`,
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'medium',
+    modelAnswer: `(a) Dependent is a weak entity set because it cannot be uniquely identified by its own attributes alone. Two dependants from different employees could share the same depName (e.g. both called "Alice"). The discriminator depName only uniquely identifies a dependant WITHIN the context of a specific employee. Dependent must rely on the identifying relationship with Employee for full identification.
+
+(b) Relational schema:
+
+CREATE TABLE Employee (
+  empID  VARCHAR(10) PRIMARY KEY,
+  name   VARCHAR(100) NOT NULL,
+  salary DECIMAL(10, 2)
+);
+
+-- Weak entity table: PK is (empID + discriminator)
+CREATE TABLE Dependent (
+  empID     VARCHAR(10) REFERENCES Employee(empID) ON DELETE CASCADE,
+  depName   VARCHAR(100),
+  birthYear INTEGER,
+  PRIMARY KEY (empID, depName)
+);
+
+Note: ON DELETE CASCADE is typical for weak entities — if the owner employee is deleted, their dependants should also be deleted.`,
+    commonMistakes: [
+      "Using only depName as the PK of Dependent — depName alone is not unique across all employees; the PK must be (empID, depName)",
+      "Forgetting to include empID in the Dependent table — the owner's PK must appear in the weak entity's table as both a FK and part of the PK",
+      "Not including ON DELETE CASCADE — without it, deleting an employee who has dependants will violate the FK constraint",
+    ],
+  },
+  {
+    id: 'db-adv-p-1',
+    prompt: `Write a SQL query using CASE WHEN to categorise employees into salary bands:
+- 'executive' if salary >= 100000
+- 'senior' if salary >= 60000
+- 'junior' if salary >= 30000
+- 'entry' otherwise
+
+Return: name, salary, salary_band. Order by salary descending.`,
+    topic: 'Advanced SQL — CASE WHEN',
+    module: 'db',
+    difficulty: 'medium',
+    modelAnswer: `SELECT name,
+       salary,
+       CASE
+         WHEN salary >= 100000 THEN 'executive'
+         WHEN salary >= 60000  THEN 'senior'
+         WHEN salary >= 30000  THEN 'junior'
+         ELSE 'entry'
+       END AS salary_band
+FROM Employee
+ORDER BY salary DESC;`,
+    commonMistakes: [
+      "Putting the ELSE clause before higher thresholds — CASE WHEN evaluates conditions top to bottom and stops at the first match; order matters when ranges overlap",
+      "Writing separate overlapping conditions (e.g. salary BETWEEN 60000 AND 99999) — this is verbose and error-prone; cascading >= conditions with CASE are simpler",
+      "Forgetting ORDER BY or using ORDER BY salary_band — the question asks for ordering by salary value, not the label",
+      "Not aliasing the CASE expression — without AS salary_band the column has no name in the output",
+    ],
+  },
+  {
+    id: 'db-adv-p-2',
+    prompt: `Using a CTE (WITH clause), write a SQL query that:
+1. Computes the total enrolments per course.
+2. Computes the average of those totals.
+3. Returns only courses whose enrolment count is above that average.
+
+Tables: Course(courseID, title), Enrolment(studentID, courseID, grade).`,
+    topic: 'Advanced SQL — CTEs',
+    module: 'db',
+    difficulty: 'medium',
+    modelAnswer: `WITH course_counts AS (
+  SELECT c.courseID,
+         c.title,
+         COUNT(e.studentID) AS enrolment_count
+  FROM Course c
+  LEFT JOIN Enrolment e ON c.courseID = e.courseID
+  GROUP BY c.courseID, c.title
+),
+avg_count AS (
+  SELECT AVG(enrolment_count) AS avg_enrolments
+  FROM course_counts
+)
+SELECT cc.courseID,
+       cc.title,
+       cc.enrolment_count
+FROM course_counts cc
+CROSS JOIN avg_count ac
+WHERE cc.enrolment_count > ac.avg_enrolments
+ORDER BY cc.enrolment_count DESC;`,
+    commonMistakes: [
+      "Nesting subqueries instead of CTEs — CTEs (WITH) improve readability and can be referenced multiple times; nested subqueries become hard to read",
+      "Using INNER JOIN instead of LEFT JOIN for Course to Enrolment — courses with zero enrolments are excluded by INNER JOIN; use LEFT JOIN so COUNT returns 0 for empty courses",
+      "Trying to use AVG(COUNT(...)) in a single query without a CTE or subquery — aggregate functions cannot be nested directly in standard SQL",
+    ],
+  },
+  {
+    id: 'db-adv-p-3',
+    prompt: `Write a SQL query using window functions to:
+1. Rank students within each department by GPA descending using RANK().
+2. Also compute ROW_NUMBER() for comparison.
+3. Return name, dept, gpa, rank_by_gpa, and row_num.
+
+Explain in a comment what happens to the rankings when two students have the same GPA.`,
+    topic: 'Advanced SQL — Window Functions',
+    module: 'db',
+    difficulty: 'hard',
+    modelAnswer: `SELECT name,
+       dept,
+       gpa,
+       RANK()       OVER (PARTITION BY dept ORDER BY gpa DESC) AS rank_by_gpa,
+       ROW_NUMBER() OVER (PARTITION BY dept ORDER BY gpa DESC) AS row_num
+FROM Student
+ORDER BY dept, rank_by_gpa;
+
+-- RANK() vs ROW_NUMBER() with ties:
+-- Suppose two students in CS both have GPA = 3.9:
+--   RANK():       both get rank 1; next student gets rank 3 (gap).
+--   ROW_NUMBER(): one gets 1, the other gets 2 (arbitrary tiebreak); no gap.
+-- DENSE_RANK() would give both rank 1 and next student rank 2 (no gap).`,
+    commonMistakes: [
+      "Forgetting PARTITION BY — without it, ranking is computed globally across all departments, not per department",
+      "Trying to filter WHERE rank_by_gpa <= 3 in the same query — window function aliases are not visible in WHERE; wrap in a subquery or CTE first",
+      "Confusing ORDER BY inside OVER() with the final ORDER BY — they are independent; the ORDER BY inside OVER() controls ranking order, the outer ORDER BY controls row display order",
+    ],
+  },
+
+  // ===========================
+  // NEW IDS PRACTICE ITEMS (7)
+  // ===========================
+  {
+    id: 'ids-rmd-p-1',
+    prompt: `You want a setup chunk that:
+(a) Loads the tidyverse and here packages.
+(b) Globally sets results='hold' for all subsequent chunks.
+(c) Is NOT shown in the rendered document.
+(d) Produces NO output in the rendered document (no messages about package loading).
+
+Write the complete R Markdown chunk.`,
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'medium',
+    modelAnswer: `\`\`\`{r setup, include=FALSE}
+library(tidyverse)
+library(here)
+
+knitr::opts_chunk$set(results = "hold")
+\`\`\`
+
+Explanation of options:
+- include=FALSE: hides BOTH the code and ALL output (including messages from library()).
+  This is more powerful than echo=FALSE + message=FALSE because it suppresses everything.
+- knitr::opts_chunk$set(results = "hold"): applies results='hold' globally to all chunks that follow.
+- The chunk label "setup" is conventional but not required.
+
+Common wrong answers:
+- echo=FALSE alone: still shows library() messages.
+- message=FALSE alone: still shows the code.
+- results='hide' in opts_chunk$set: hides text output but still shows code.`,
+    commonMistakes: [
+      "Using echo=FALSE instead of include=FALSE — echo=FALSE hides the code but still shows messages from library(); include=FALSE suppresses everything",
+      "Putting message=FALSE as a chunk option instead of inside opts_chunk$set() — the question asks for a GLOBAL setting via opts_chunk$set",
+      "Setting results='hide' in opts_chunk$set — this would suppress text output globally, which is too aggressive; the question only asks for results='hold'",
+    ],
+  },
+  {
+    id: 'ids-rmd-p-2',
+    prompt: `Explain what each of the following R Markdown chunk options does and give the rendered behaviour:
+
+(a) \`\`\`{r, echo=FALSE, eval=TRUE}
+(b) \`\`\`{r, echo=TRUE, eval=FALSE}
+(c) \`\`\`{r, results='hide', warning=FALSE}
+(d) \`\`\`{r, include=FALSE}`,
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'medium',
+    modelAnswer: `(a) echo=FALSE, eval=TRUE
+  Code runs but is hidden. Output (plots, printed values) is shown.
+  Use case: producing a plot or table without cluttering the report with code.
+
+(b) echo=TRUE, eval=FALSE
+  Code is shown in the rendered document but is NOT executed.
+  No output, no side effects (e.g. packages are not loaded).
+  Use case: demonstrating syntax without running it.
+
+(c) results='hide', warning=FALSE
+  Code runs. Warnings are suppressed. Text/console output is hidden.
+  Plots are still shown (use fig.show='hide' to suppress those too).
+  Use case: running code for side effects (e.g. creating an object) without cluttering the output.
+
+(d) include=FALSE
+  Code runs. EVERYTHING is hidden: the code, text output, plots, warnings, messages.
+  Use case: setup chunks (loading packages, setting options) that should be invisible.`,
+    commonMistakes: [
+      "Thinking eval=FALSE still shows output — it does not run, so there is no output to show",
+      "Thinking results='hide' also hides plots — it only hides text/console output; use fig.show='hide' for plots",
+      "Confusing include=FALSE with echo=FALSE — include=FALSE hides everything including plots; echo=FALSE only hides the code",
+    ],
+  },
+  {
+    id: 'ids-parse-p-1',
+    prompt: `The file ramen_ratings.csv uses:
+- Semicolon (;) as the field separator
+- Comma (,) as the decimal mark
+- The first line is a comment (starts with #) that should be skipped
+
+Write the R code to read this file correctly into a tibble, ensuring numeric columns with comma decimals are parsed correctly.`,
+    topic: 'Data Reading',
+    module: 'ids',
+    difficulty: 'medium',
+    modelAnswer: `library(readr)
+
+ramen <- read_csv2(
+  file   = "ramen_ratings.csv",
+  skip   = 1,                           # skip the comment line
+  locale = locale(decimal_mark = ",")   # handle comma decimals
+)
+
+# Why read_csv2()?
+# read_csv2() already defaults to semicolon separator AND comma decimal mark.
+# The locale= argument is technically redundant here since read_csv2()
+# already sets decimal_mark=","" in its default locale, but it is good practice
+# to be explicit.
+
+# Alternative using read_delim() for full control:
+ramen <- read_delim(
+  file  = "ramen_ratings.csv",
+  delim = ";",
+  skip  = 1,
+  locale = locale(decimal_mark = ",")
+)`,
+    commonMistakes: [
+      "Using read_csv() (with semicolons) — read_csv() expects commas as separators; semicolons would result in one unparsed column",
+      "Using skip=1 with read_csv() and forgetting the delimiter — you still need to handle the semicolon separator",
+      "Not specifying locale — without locale(decimal_mark=','), numbers like '4,5' would be parsed as character strings NA",
+      "Using comment='#' instead of skip=1 — comment= skips lines ANYWHERE in the file starting with #, which may incorrectly skip data rows; skip= only skips the first N lines",
+    ],
+  },
+  {
+    id: 'ids-parse-p-2',
+    prompt: `After reading a CSV with read_csv(), you notice that a column called "revenue" was parsed as character (type <chr>) even though it should be numeric. List three possible reasons this could happen and write the R code to fix the column after reading.`,
+    topic: 'Data Reading',
+    module: 'ids',
+    difficulty: 'medium',
+    modelAnswer: `Three reasons a numeric column reads as character:
+
+1. Non-numeric strings in the data: some cells contain text like "N/A", "-", "unknown", or "#ERROR!".
+   read_csv() cannot parse these as numbers and falls back to character.
+
+2. Wrong decimal mark: if values use a comma decimal (e.g. "1,234.56" or "1.234,56"),
+   the parser may not recognise them as numbers without the correct locale.
+
+3. Thousands separator: values like "1,000,000" contain commas that confuse the parser
+   unless the grouping_mark is specified.
+
+Fixes after reading:
+
+library(readr)
+library(dplyr)
+
+df <- read_csv("data.csv")
+
+# Fix 1: coerce with as.numeric (NAs introduced where non-numeric)
+df <- df |> mutate(revenue = as.numeric(revenue))
+
+# Fix 2: use parse_number() which strips currency symbols and commas
+df <- df |> mutate(revenue = parse_number(revenue))
+# parse_number("$1,234.56") → 1234.56  (ignores non-numeric characters)
+
+# Fix 3: specify col_types upfront to prevent the issue
+df <- read_csv("data.csv", col_types = cols(revenue = col_double()))`,
+    commonMistakes: [
+      "Using as.numeric() when values contain commas — as.numeric('1,234') returns NA; use parse_number() instead as it handles these gracefully",
+      "Not checking which rows caused the problem — use problems(df) after read_csv() to see exactly which cells failed to parse",
+      "Fixing it after the fact instead of specifying col_types upfront — specifying col_types = cols(revenue = col_double()) at read time is cleaner",
+    ],
+  },
+  {
+    id: 'ids-idx-p-1',
+    prompt: `Predict the output of each R expression and explain the reasoning:
+
+(a) x <- 1:5; x[c(TRUE, FALSE, TRUE, FALSE, TRUE)]
+(b) letters[27]
+(c) y <- c(10, 20, 5, 30, 15); x <- letters[1:5]; x[y > 12]
+(d) "c" %in% letters; which(letters == "c")`,
+    topic: 'R Vectors / Logical Indexing',
+    module: 'ids',
+    difficulty: 'medium',
+    modelAnswer: `(a) x <- 1:5; x[c(TRUE, FALSE, TRUE, FALSE, TRUE)]
+    Logical indexing: selects elements where the index is TRUE.
+    Positions 1, 3, 5 are TRUE → selects x[1]=1, x[3]=3, x[5]=5.
+    Output: [1] 1 3 5
+
+(b) letters[27]
+    letters has 26 elements (a–z). Indexing beyond the length returns NA silently.
+    Output: [1] NA
+    No error is thrown — this is a common exam trap.
+
+(c) y <- c(10, 20, 5, 30, 15); x <- letters[1:5]; x[y > 12]
+    y > 12 → c(FALSE, TRUE, FALSE, TRUE, TRUE)
+    x[y > 12] selects x[2]="b", x[4]="d", x[5]="e"
+    Output: [1] "b" "d" "e"
+
+(d) "c" %in% letters → TRUE  (single logical: is "c" in the vector?)
+    which(letters == "c") → 3  (integer: position of "c" in letters)`,
+    commonMistakes: [
+      "Expecting an error for letters[27] — R returns NA, not an error, for out-of-bounds vector indexing",
+      "Confusing %in% (returns one TRUE/FALSE) with == (returns a vector of TRUE/FALSE per element)",
+      "Confusing which() output (integer positions) with the matching values themselves",
+    ],
+  },
+  {
+    id: 'ids-tidy-p-1',
+    prompt: `The following data frame is in wide format. Use tidyr to reshape it to long format so the output has three columns: company, date, market_capitalisation. Then use drop_na() to remove rows with missing values.
+
+\`\`\`r
+market_cap <- data.frame(
+  company   = c("Apple", "Google", "Meta"),
+  "2021-Q1" = c(2.1, 1.4, NA),
+  "2021-Q2" = c(2.3, 1.5, 0.8),
+  "2021-Q3" = c(NA,  1.6, 0.9),
+  check.names = FALSE
+)
+\`\`\``,
+    topic: 'Tidy Data / pivot_longer',
+    module: 'ids',
+    difficulty: 'medium',
+    modelAnswer: `library(tidyr)
+library(dplyr)
+
+market_cap |>
+  pivot_longer(
+    cols      = !company,              # all columns except company
+    names_to  = "date",
+    values_to = "market_capitalisation"
+  ) |>
+  drop_na(market_capitalisation)       # remove rows where market_cap is NA
+
+# Result (6 rows → 4 rows after drop_na):
+# company  date     market_capitalisation
+# Apple    2021-Q1  2.1
+# Apple    2021-Q2  2.3
+# Google   2021-Q1  1.4
+# Google   2021-Q2  1.5
+# Google   2021-Q3  1.6
+# Meta     2021-Q2  0.8
+# Meta     2021-Q3  0.9
+
+# Note: drop_na() with a column name only drops rows where THAT column is NA.
+# drop_na() with no arguments drops any row with ANY NA.`,
+    commonMistakes: [
+      "Using cols = c('2021-Q1', '2021-Q2', '2021-Q3') — this works but !company is more concise and robust if date columns are added",
+      "Using na.omit() instead of drop_na() — na.omit() drops any row with any NA across all columns; drop_na(market_capitalisation) is more targeted",
+      "Forgetting check.names=FALSE when creating the data frame — without it, column names like '2021-Q1' are mangled to 'X2021.Q1'",
+    ],
+  },
+  {
+    id: 'ids-sample-p-1',
+    prompt: `A researcher wants to estimate the average number of hours per week that City University students spend studying.
+
+(a) Define the population for this study.
+(b) The researcher surveys 50 students who happen to be in the library on a Tuesday afternoon. What type of sampling is this? What bias might it introduce?
+(c) Propose a better sampling method and explain why it would give more reliable estimates.
+(d) Is this an observational study or an experiment? Explain.`,
+    topic: 'Sampling Methods',
+    module: 'ids',
+    difficulty: 'medium',
+    modelAnswer: `(a) Population:
+All currently enrolled students at City University (for the relevant semester/year).
+The parameter of interest is the mean weekly study hours across this population.
+
+(b) Sampling method: convenience sampling.
+The researcher uses whoever is most accessible — students already in the library.
+Bias introduced: students in the library on a Tuesday afternoon are likely to study more than average. This sample over-represents diligent students and will produce an upward-biased estimate of mean study hours. Students who never use the library are completely excluded.
+
+(c) Better method: simple random sampling.
+Obtain the full list of enrolled students from the university registry. Randomly select 50 students (e.g. using a random number generator). Contact each selected student directly.
+Why better: every student has an equal probability of selection, so the sample is more likely to represent the full diversity of study habits. Estimates will be less biased.
+
+Alternative: stratified random sampling by course/year — ensures all year groups are proportionally represented, which reduces sampling variance.
+
+(d) Observational study.
+The researcher observes and records study hours without intervening or assigning students to conditions. There is no treatment or manipulation.
+Contrast with an experiment: in an experiment, the researcher would randomly assign students to different conditions (e.g. different study environments) and measure the effect.`,
+    commonMistakes: [
+      "Defining the population too narrowly (e.g. 'students in the library') — the population is ALL enrolled students, not just those observed",
+      "Saying the library sample is 'random' because any student could walk in — randomness requires every member of the population to have a known, non-zero probability of selection; convenience sampling does not guarantee this",
+      "Confusing observational study with survey — surveys are a data collection method; the study TYPE depends on whether there is researcher intervention",
+    ],
+  },
 ];

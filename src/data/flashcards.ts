@@ -373,6 +373,110 @@ HAVING AVG(gpa) = (
     module: 'db',
     difficulty: 'hard',
   },
+
+  // === NEW: ER-to-Relational Mapping (6 cards) ===
+  {
+    id: 'db-er-1',
+    front: 'State the rule for converting a M:N relationship to a relational schema.',
+    back: 'Create a separate relation (junction table) whose attributes are the primary keys of both participating entity sets (as foreign keys) plus any attributes of the relationship itself.\nThe primary key of the new table is the combination of the two foreign keys.\nExample: Enrols(studentID FK→Student, courseID FK→Course, grade). PK = (studentID, courseID).',
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'medium',
+  },
+  {
+    id: 'db-er-2',
+    front: 'State the rule for converting a weak entity set to a relational table.',
+    back: 'Include all attributes of the weak entity set AND the primary key of its owner (identifying) entity set as a foreign key.\nThe primary key of the weak entity table is (owner PK + discriminator attribute).\nExample: Dependent(empID FK→Employee, depName, age). PK = (empID, depName).',
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'medium',
+  },
+  {
+    id: 'db-er-3',
+    front: 'How is a 1:N relationship represented in a relational schema?',
+    back: 'Place the primary key of the "1" side as a foreign key in the table on the "N" side. No separate junction table is needed.\nExample: Department(deptID, name); Professor(profID, name, deptID FK→Department).\nThe FK (deptID) goes in Professor (the N side), not in Department (the 1 side).',
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'easy',
+  },
+  {
+    id: 'db-er-4',
+    front: 'What are the three options for mapping an ISA hierarchy to relational tables?',
+    back: '1. Single table: one table with all superclass and subclass attributes; subclass-specific columns are NULL for non-members. Simple but many NULLs.\n2. Separate tables for subclasses only: each subclass table repeats the superclass PK and attributes. Subclass rows not stored in superclass table.\n3. Separate table per class: superclass table + one table per subclass containing only the subclass-specific attributes with the superclass PK as FK. Most normalised.',
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'hard',
+  },
+  {
+    id: 'db-er-5',
+    front: 'What is the difference between a strong and weak entity set?',
+    back: 'Strong entity set: has enough attributes to form a primary key on its own — can be uniquely identified without reference to any other entity.\nWeak entity set: cannot be uniquely identified by its own attributes alone; depends on an owner (strong) entity via an identifying relationship. Its key is (owner PK + discriminator).\nIn ER diagrams: weak entity = double rectangle; identifying relationship = double diamond.',
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'easy',
+  },
+  {
+    id: 'db-er-6',
+    front: 'When converting an entity set to a table, which attributes become the primary key?',
+    back: 'The underlined attributes in the ER diagram become the primary key of the corresponding relational table. These are the attributes that form the entity\'s key — a minimal set that uniquely identifies every entity in the set.\nFor a weak entity set, the PK is (owner entity\'s PK + discriminator attribute of the weak entity).',
+    topic: 'ER to Relational',
+    module: 'db',
+    difficulty: 'easy',
+  },
+
+  // === NEW: Advanced SQL (4 cards) ===
+  {
+    id: 'db-adv-1',
+    front: 'Write a CASE WHEN expression that labels salary as \'high\' if > 50000, else \'low\'.',
+    back: `SELECT name,
+       salary,
+       CASE WHEN salary > 50000 THEN 'high'
+            ELSE 'low'
+       END AS salary_band
+FROM Employee;
+
+-- CASE WHEN evaluates conditions top-to-bottom; the first matching THEN is used.
+-- ELSE is optional but recommended — without it, unmatched rows get NULL.`,
+    topic: 'Advanced SQL',
+    module: 'db',
+    difficulty: 'medium',
+  },
+  {
+    id: 'db-adv-2',
+    front: 'Write a CTE (WITH clause) that computes average salary per department, then selects departments where avg > 40000.',
+    back: `WITH dept_avg AS (
+  SELECT dept,
+         AVG(salary) AS avg_salary
+  FROM Employee
+  GROUP BY dept
+)
+SELECT dept, avg_salary
+FROM dept_avg
+WHERE avg_salary > 40000
+ORDER BY avg_salary DESC;
+
+-- CTEs (Common Table Expressions) improve readability.
+-- The WITH block defines a named temporary result set reusable in the main query.`,
+    topic: 'Advanced SQL',
+    module: 'db',
+    difficulty: 'medium',
+  },
+  {
+    id: 'db-adv-3',
+    front: 'What is the difference between RANK() and ROW_NUMBER()?',
+    back: 'ROW_NUMBER(): assigns a unique sequential integer to every row within the partition. No ties — two rows with equal ORDER BY values still get different numbers.\nRANK(): assigns the same rank to tied rows, then skips the next ranks. E.g. two rows tied for rank 2 both get rank 2; the next row gets rank 4.\nDENSE_RANK(): like RANK() but does not skip — tied rows get the same rank and the next row gets rank 3 (not 4).',
+    topic: 'Advanced SQL',
+    module: 'db',
+    difficulty: 'medium',
+  },
+  {
+    id: 'db-adv-4',
+    front: 'What is the difference between UNION and UNION ALL?',
+    back: 'UNION: combines the result sets of two SELECT statements and removes duplicate rows. More expensive — requires a distinct/sort pass.\nUNION ALL: combines result sets and keeps all rows including duplicates. Faster.\nBoth require the same number of columns with compatible data types.\nUse UNION ALL when duplicates are acceptable or impossible — it is always faster.\nSee also: INTERSECT (rows in both), EXCEPT / MINUS (rows in first but not second).',
+    topic: 'Advanced SQL',
+    module: 'db',
+    difficulty: 'medium',
+  },
 ];
 
 export const idsFlashcards: Flashcard[] = [
@@ -867,5 +971,210 @@ str_sub(starwars$name, start = -3L, end = -1L)`,
     topic: 'stringr',
     module: 'ids',
     difficulty: 'hard',
+  },
+
+  // === NEW: R Markdown chunk options (6 cards) ===
+  {
+    id: 'ids-rmd-1',
+    front: 'What does `echo=FALSE` do in an R Markdown chunk?',
+    back: 'echo=FALSE hides the source code from the rendered output but still runs the code and shows its output (plots, printed values, etc.).\nCommon use: setup chunks, loading libraries, or producing a plot without showing the code.\nContrast: eval=FALSE shows the code but does NOT run it.',
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+  {
+    id: 'ids-rmd-2',
+    front: 'What is the difference between `results=\'hide\'` and `eval=FALSE`?',
+    back: 'results=\'hide\': the code IS run (side effects like loading packages still happen), but any printed/text output is suppressed. Plots are still shown unless fig.show=\'hide\' is also set.\neval=FALSE: the code is NOT run at all — no side effects, no output. The code is shown (if echo=TRUE) but treated as inert.',
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-rmd-3',
+    front: 'Write the setup chunk that globally sets results=\'hold\' and is hidden from the rendered output.',
+    back: `\`\`\`{r setup, include=FALSE}
+knitr::opts_chunk$set(results = "hold")
+\`\`\`
+
+Key points:
+- include=FALSE hides both the code AND any output of this chunk.
+- knitr::opts_chunk$set() applies defaults to ALL subsequent chunks.
+- Individual chunks can override with their own options.`,
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-rmd-4',
+    front: 'What chunk option suppresses warnings but still runs the code and shows output?',
+    back: 'warning=FALSE suppresses warning messages from appearing in the rendered output. The code still runs and all normal output (printed values, plots) is still shown.\nSimilarly, message=FALSE suppresses informational messages (e.g. the "Attaching packages" message from library(tidyverse)).\nNeither warning=FALSE nor message=FALSE affects whether the code is run — they only control what appears in the output.',
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+  {
+    id: 'ids-rmd-5',
+    front: 'What does `results=\'hold\'` do differently from default behaviour?',
+    back: 'Default (results=\'markup\'): output is interleaved — each expression\'s output appears immediately after that line of code in the rendered document.\nresults=\'hold\': all output from the chunk is held and displayed together AFTER all the code has finished executing. The code block appears first, then all output below it.\nUseful when a chunk contains multiple expressions and you want output grouped at the bottom.',
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-rmd-6',
+    front: 'Write the chunk option combination that shows the code but does not run it.',
+    back: `\`\`\`{r, eval=FALSE, echo=TRUE}
+# This code is displayed in the output but never executed.
+mean(starwars$height, na.rm = TRUE)
+\`\`\`
+
+eval=FALSE — prevents execution.
+echo=TRUE — shows the code (this is the default, so you can omit it).
+Use case: demonstrating syntax or showing code that requires data not available at render time.`,
+    topic: 'R Markdown',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+
+  // === NEW: Data reading/parsing (5 cards) ===
+  {
+    id: 'ids-parse-1',
+    front: 'Why does `read_csv2()` exist? When do you use it instead of `read_csv()`?',
+    back: 'read_csv() assumes comma (,) as the field separator and period (.) as the decimal mark — the US/UK convention.\nread_csv2() assumes semicolon (;) as the field separator and comma (,) as the decimal mark — the European convention (countries where 1.234,56 is standard).\nUse read_csv2() when your CSV file comes from a European locale where numbers use a comma decimal mark and fields are separated by semicolons.',
+    topic: 'Data Reading',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+  {
+    id: 'ids-parse-2',
+    front: "What does `parse_double('1,5', locale=locale(decimal_mark=','))` return?",
+    back: "parse_double('1,5', locale = locale(decimal_mark = ',')) returns the numeric value 1.5.\nWithout the locale argument, parse_double('1,5') would fail (return NA with a warning) because the default decimal mark is '.'.\nThe locale() function from readr lets you specify regional number formatting conventions.",
+    topic: 'Data Reading',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-parse-3',
+    front: 'Why might a numeric column be read as character by read_csv()?',
+    back: 'read_csv() guesses column types by reading the first 1000 rows (by default). A column is read as character if:\n1. Non-numeric values appear (e.g. "N/A", "-", "—", or text mixed in).\n2. The decimal mark does not match the locale (e.g. "1,5" in a US locale).\n3. Thousands separators confuse the parser (e.g. "1,234").\nFix: use col_types to specify types explicitly, or use parse_number() / parse_double() with the correct locale after reading.',
+    topic: 'Data Reading',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-parse-4',
+    front: 'Write the R code to read the first 4 lines of a CSV file without loading the whole file.',
+    back: `library(readr)
+
+# Read only the first 4 lines (including header):
+read_lines("data.csv", n_max = 4L)
+
+# To parse those 4 lines as a data frame (3 data rows + header):
+read_csv("data.csv", n_max = 3L)
+# n_max controls the number of DATA rows read (not counting the header).
+
+# Alternatively, for quick inspection without parsing:
+read_lines("data.csv", n_max = 6L)  # see first 6 raw lines`,
+    topic: 'Data Reading',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-parse-5',
+    front: 'What does `clean_names()` from the janitor package do?',
+    back: 'clean_names() converts column names to a consistent, snake_case format:\n- Converts to lowercase.\n- Replaces spaces and special characters with underscores.\n- Removes duplicate underscores.\n- Handles names that start with numbers by prepending "x".\n\nExample: "First Name" → "first_name", "Sales (£)" → "sales_gbp_".\n\nUsage: df |> janitor::clean_names()\n\nEssential when reading files with messy headers (e.g. Excel files).',
+    topic: 'Data Reading',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+
+  // === NEW: Logical indexing edge cases (4 cards) ===
+  {
+    id: 'ids-idx-1',
+    front: 'What does `letters[27]` return and why?',
+    back: 'letters[27] returns NA (not an error).\nletters has only 26 elements (a–z). Indexing beyond the length of a vector in R returns NA silently — R does not throw an out-of-bounds error.\nThis is a common exam trap: if you expect an error and instead get NA propagating through calculations, the result will be unexpected.\nContrast with lists: l[[27]] on a list of length 26 DOES throw a subscript out of bounds error.',
+    topic: 'R Vectors / Indexing',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-idx-2',
+    front: "What is the difference between `'b' == letters` and `'b' %in% letters`?",
+    back: "'b' == letters returns a logical VECTOR of length 26: FALSE FALSE TRUE FALSE FALSE ... (TRUE only at position 2).\n'b' %in% letters returns a single logical value: TRUE.\n\nKey distinction:\n== compares element-by-element and returns a vector of the same length.\n%in% checks membership and always returns a single TRUE/FALSE (or one per element on the left-hand side).\n\nUse %in% when you want a simple yes/no membership test; use == when you need to know which positions match.",
+    topic: 'R Vectors / Indexing',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-idx-3',
+    front: "What does `x[y > 10] <- 'bla'` do when x and y are both length-26 vectors?",
+    back: "This assigns the string 'bla' to every position in x where the corresponding element of y is greater than 10.\nCRITICAL TRAP: x is likely a numeric or logical vector. Assigning a character string to some elements forces the entire vector x to be coerced to character — all existing numeric values become character strings.\nResult: x is now a character vector. All elements not replaced by 'bla' have their original numeric values converted to character (e.g. 3 becomes '3').",
+    topic: 'R Vectors / Indexing',
+    module: 'ids',
+    difficulty: 'hard',
+  },
+  {
+    id: 'ids-idx-4',
+    front: "What does `which(letters == 'c')` return?",
+    back: "which() returns the INDICES (positions) of TRUE elements in a logical vector.\nletters == 'c' produces a length-26 logical vector: FALSE FALSE TRUE FALSE ...\nwhich(letters == 'c') returns 3 — the integer position where the condition is TRUE.\n\nContrast:\nletters == 'c'    → logical vector of length 26\nwhich(letters == 'c') → integer vector of positions: 3\n\nUseful for finding where something occurs without extracting the values themselves.",
+    topic: 'R Vectors / Indexing',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+
+  // === NEW: Tidy data / drop_na (3 cards) ===
+  {
+    id: 'ids-tidy-1',
+    front: 'Define tidy data in one sentence.',
+    back: 'Tidy data is a rectangular data structure where each variable has its own column, each observation has its own row, and each value has its own cell.\n(Wickham 2014 / R4DS definition)\nThe three rules:\n1. Each variable is a column.\n2. Each observation is a row.\n3. Each value is a cell.\nTidy data is the required input format for dplyr, ggplot2, and most tidyverse functions.',
+    topic: 'Tidy Data',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+  {
+    id: 'ids-tidy-2',
+    front: 'What is the difference between explicit and implicit missingness?',
+    back: 'Explicit missingness: an NA value is present in the data — the cell exists but contains NA. You can see it.\nImplicit missingness: an entire row is absent from the data — the observation simply does not appear in the dataset. You cannot see it directly.\n\nExample (stock prices): if AAPL has no entry for 2023-12-25 (a holiday), that is implicit. If the row exists but price is NA, that is explicit.\n\nTo convert implicit to explicit: use tidyr::complete() or pivot_longer() which can surface missing combinations.',
+    topic: 'Tidy Data',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+  {
+    id: 'ids-tidy-3',
+    front: 'Write the pivot_longer() call to reshape market_cap data from wide (company rows, date columns) to long format.',
+    back: `# Wide format: company | 2020-Q1 | 2020-Q2 | 2020-Q3 ...
+# Long format: company | date | market_capitalisation
+
+df |>
+  pivot_longer(
+    cols      = !company,          # all columns except company
+    names_to  = "date",
+    values_to = "market_capitalisation"
+  )
+
+# !company selects every column that is NOT company.
+# Equivalently: cols = -company or cols = starts_with("20")`,
+    topic: 'Tidy Data',
+    module: 'ids',
+    difficulty: 'medium',
+  },
+
+  // === NEW: Sampling methods (2 cards) ===
+  {
+    id: 'ids-sample-1',
+    front: 'What is the difference between a population and a sample?',
+    back: 'Population: the complete set of all individuals/units of interest for a study. Studying the whole population gives exact (parameter) values but is usually impossible or impractical.\nSample: a subset of the population that is selected for study. Statistics computed from the sample (e.g. mean, proportion) are estimates of the true population parameters.\n\nKey types:\n- Simple random sample: every individual has an equal chance of selection.\n- Stratified sample: population divided into subgroups (strata); random sample taken from each.\n- Convenience sample: uses whoever is most available — prone to bias.',
+    topic: 'Sampling',
+    module: 'ids',
+    difficulty: 'easy',
+  },
+  {
+    id: 'ids-sample-2',
+    front: 'Give one example of convenience sampling and explain why it introduces bias.',
+    back: 'Example: surveying students in a single lecture hall to estimate average study hours for the whole university.\nBias introduced: students who attend lectures may study more than those who do not — the sample systematically over-represents one subgroup. The sample is not representative of the full student population.\n\nOther examples: online opt-in polls (only people with strong opinions respond — response bias), surveying friends (social circle may share similar demographics).\n\nConsequence: estimates from a convenience sample cannot be reliably generalised to the whole population.',
+    topic: 'Sampling',
+    module: 'ids',
+    difficulty: 'medium',
   },
 ];
